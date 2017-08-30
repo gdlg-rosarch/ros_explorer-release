@@ -1,0 +1,177 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-styles/typography.html">
+<link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
+<link rel="import" href="rose-dashboard.html">
+<link rel="import" href="rose-node.html">
+<link rel="import" href="rose-topic.html">
+<link rel="import" href="rose-service.html">
+<link rel="import" href="rose-param.html">
+
+<dom-module id="rose-app">
+  <template>
+    <style>
+      :host {
+        display: block;
+        @apply(--paper-font-common-base);
+        padding: 10px;
+        padding-top: 0;
+      }
+      a.back {
+        margin-top: 8px;
+        display: block;
+      }
+      .code {
+        @apply(--paper-font-common-code);
+      }
+      paper-dialog {
+        max-width: 700px;
+      }
+      #urlInput {
+        margin-bottom: 10px;
+        max-width: 700px;
+        min-width: 200px;
+        width: 50%;
+      }
+      #urlInput paper-button {
+        @apply(--paper-font-button);
+        background-color: #e0e0e0;
+        bottom: -24px;
+        height: 30px;
+        position: relative;
+      }
+      #urlInput paper-button:hover {
+        background-color: #bdbdbd;
+      }
+    </style>
+    <style include="iron-flex"></style>
+    <app-location route="{{route}}" use-hash-as-path></app-location>
+    <app-route
+      data="{{routeData}}"
+      pattern="/:page"
+      route="{{route}}"
+      tail="{{routeTail}}"
+    ></app-route>
+    <ros-websocket
+      id="websocket"
+      url="{{url}}" 
+      on-close="_rosClosed"
+      on-error="_rosError"
+      on-connection="_rosConnected"
+      ros="{{ros}}"
+    ></ros-websocket>
+
+    <a href="#/" class="back" hidden="[[!showBackButton]]">&larr; Back to dashboard</a>
+    <div id="urlInput" class="layout horizontal">
+      <paper-input class="flex" label="Websocket URL" value="{{url}}"></paper-input>
+      <paper-button on-tap="connect">Connect</paper-button>
+    </div>
+    <iron-pages attr-for-selected="data-route" selected="{{routeData.page}}">
+      <section data-route="">
+        <rose-dashboard id="dashboard" ros="{{ros}}"></rose-dashboard>
+      </section>
+      <section data-route="node">
+        <rose-node id="nodePage" name="{{routeTail.path}}" ros="{{ros}}"></rose-node>
+      </section>
+      <section data-route="topic">
+        <rose-topic id="topicPage" name="{{routeTail.path}}" ros="{{ros}}"></rose-topic>
+      </section>
+      <section data-route="service">
+        <rose-service id="servicePage" name="{{routeTail.path}}" ros="{{ros}}"></rose-service>
+      </section>
+      <section data-route="param">
+        <rose-param id="paramPage" name="{{routeTail.path}}" ros="{{ros}}"></rose-param>
+      </section>
+    </iron-pages>
+    <paper-dialog modal id="disconnected">
+      <h2>Disconnected from websocket server</h2>
+      <p>
+        The connection to the websocket server could not be established.
+        Check that the websocket server is running (<span class="code">roslaunch rosbridge_server rosbridge_websocket.launch</span>) and retry.
+      </p>
+      <paper-input label="Websocket URL" value="{{url}}"></paper-input>
+      <div class="buttons">
+        <paper-button dialog-confirm on-tap="connect">Retry</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'rose-app',
+
+      properties: {
+        url: {
+          type: String,
+          value: function() {
+            var hostname = window.location.hostname;
+            var protocol = 'ws:';
+            if (window.location.protocol === 'https:') {
+              protocol = 'wss:';
+            }
+            return protocol + '//' + hostname + ':9090';
+          },
+        },
+        ros: Object,
+        showBackButton: {
+          type: Boolean,
+          value: false,
+          computed: '_computeShowBackButton(routeData.page)',
+        },
+        routeData: {
+          type: Object,
+          value: function() {
+            return {
+              page: '',
+            };
+          }
+        },
+      },
+
+      ready: function() {
+        this.connect();
+      },
+
+      connect: function() {
+        this.$.websocket.connect();
+      },
+
+      _computeShowBackButton: function(page) {
+        if (!page) {
+          return false;
+        } else {
+          return true;
+        }
+      },
+
+      _rosClosed: function() {
+        console.error('Connection to the websocket server closed.');
+        var that = this;
+        this.debounce('updateDisconnected', function() {that.$.disconnected.open();}, 1000);
+      },
+
+      _rosConnected: function() {
+        console.log('Connected to websocket server.');
+        this.$.dashboard.rosConnected();
+        this.$.nodePage.rosConnected();
+        this.$.topicPage.rosConnected();
+        this.$.servicePage.rosConnected();
+        this.$.paramPage.rosConnected();
+        var that = this;
+        this.debounce('updateDisconnected', function() {that.$.disconnected.close}, 1000);
+      },
+
+      _rosError: function() {
+        console.error('Error connecting to the websocket server.');
+        var that = this;
+        this.debounce('updateDisconnected', function() {that.$.disconnected.open}, 1000);
+      },
+    });
+  </script>
+</dom-module>

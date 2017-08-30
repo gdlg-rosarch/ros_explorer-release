@@ -1,0 +1,151 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-styles/element-styles/paper-material-styles.html">
+<link rel="import" href="../bower_components/ros-service/ros-service.html">
+
+<dom-module id="rose-service">
+  <template>
+    <style include="paper-material-styles">
+      :host {
+        display: block;
+      }
+      .paper-material {
+        @apply(--paper-material-elevation-1);
+        padding: 10px;
+        overflow-x: auto;
+        overflow-y: auto;
+        margin-right: 10px;
+        min-width: 200px;
+        max-width: 500px;
+      }
+      .paper-material h1 {
+        @apply(--paper-font-title);
+        margin-top: 0;
+      }
+    </style>
+    <style include="iron-flex"></style>
+    <ros-service id="typeService"
+      name="/rosapi/service_type"
+      on-response="_handleTypeResponse"
+      on-fail="_handleError"
+      ros="{{ros}}"
+      service-type="rosapi/ServiceType"
+    ></ros-service>
+    <ros-service id="requestDetailsService"
+      name="/rosapi/service_request_details"
+      on-fail="_handleError"
+      on-response="_handleRequestDetails"
+      ros="{{ros}}"
+      service-type="rosapi/ServiceRequestDetails"
+    ></ros-service>
+    <ros-service id="responseDetailsService"
+      name="/rosapi/service_response_details"
+      on-fail="_handleError"
+      on-response="_handleResponseDetails"
+      ros="{{ros}}"
+      service-type="rosapi/ServiceResponseDetails"
+    ></ros-service>
+    <ros-service id="nodeService"
+      last-response="{{node}}"
+      name="/rosapi/service_node"
+      on-fail="_handleError"
+      ros="{{ros}}"
+      service-type="rosapi/ServiceNode"
+    ></ros-service>
+
+    <h1>{{name}}</h1> 
+    <p>
+      <strong>Type:</strong> {{type}}<br />
+      <strong>Node:</strong> <a href="#/node{{node.node}}">{{node.node}}</a>
+    </p>
+    <div class="layout horizontal wrap">
+      <div class="paper-material">
+        <h1>Request definition</h1>
+        <rose-msg
+          name=""
+          details="[[requestDetails]]"
+        ></rose-msg>
+      </div> 
+      <div class="paper-material">
+        <h1>Response definition</h1>
+        <rose-msg
+          name=""
+          details="[[responseDetails]]"
+        ></rose-msg>
+      </div> 
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'rose-service',
+
+      properties: {
+        name: String,
+        isRosConnected: {
+          type: Boolean,
+          value: false,
+        },
+      },
+
+      observers: [
+        '_getType(name, isRosConnected)',
+        '_getNode(name, isRosConnected)',
+        '_getRequestDetails(type)',
+        '_getResponseDetails(type)',
+      ],
+
+      rosConnected: function() {
+        this.isRosConnected = true;
+      },
+
+      _getType: function(name, isRosConnected) {
+        if (name && isRosConnected) {
+          this.$.typeService.call({service: name});
+        }
+      },
+
+      _handleTypeResponse: function(evt) {
+        this.type = evt.detail.type;
+      },
+
+      _getNode: function(name, isRosConnected) {
+        if (name && isRosConnected) {
+          this.$.nodeService.call({service: name});
+        }
+      },
+
+      _getRequestDetails: function(type) {
+        if (type) {
+          this.$.requestDetailsService.call({type: type});
+        }
+      },
+
+      _handleRequestDetails: function(evt) {
+        this.requestDetails = {
+          arraylen: -1,
+          typedefs: evt.detail.typedefs,
+          type: this.type + 'Request'
+        };
+      },
+
+      _getResponseDetails: function(type) {
+        if (type) {
+          this.$.responseDetailsService.call({type: type});
+        }
+      },
+
+      _handleResponseDetails: function(evt) {
+        this.responseDetails = {
+          arraylen: -1,
+          typedefs: evt.detail.typedefs,
+          type: this.type + 'Response'
+        };
+      },
+
+      _handleError: function(e) {
+        console.error(e);
+      },
+    });
+  </script>
+</dom-module>

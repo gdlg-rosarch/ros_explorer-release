@@ -1,0 +1,105 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<!--
+  Renders a ROS message field in rosapi/TypeDef format.
+  Attributes:
+    name: The name of this field.
+    type: The type of this message.
+    arraylen: The length of this array, or -1 if this is not an array type.
+    typedefs: A map between type names and rosapi/TypeDefs.
+-->
+<dom-module id="rose-msg">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      .children {
+        padding-left: 20px;
+      }
+    </style>
+    [[details.type]]<span hidden$="[[!_isArrayType(details.arraylen)]]">[{{_arrayLenStr(details.arraylen)}}]</span> [[name]]<br />
+    <div class="children">
+      <template is="dom-repeat" items="[[childFields]]">
+        <rose-msg
+          name="[[item.name]]"
+          details="[[item.details]]"
+        ></rose-msg>
+      </template>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'rose-msg',
+      
+      properties: {
+        details: {
+          type: Object,
+          value: function() {
+            // Example: {
+            //   type: "sensor_msgs/Image",
+            //   typedefs: [ ... ],
+            //   arraylen: -1
+            // }
+            return {
+              type: "",
+              typedefs: [],
+              arraylen: -1
+            };
+          }
+        },
+        name: String,
+      },
+
+      observers: [
+        'update(details)',
+      ],
+
+      update: function(details) {
+        var type = details.type;
+        var typedefs = details.typedefs;
+        if (type && typedefs && typedefs.length) {
+          this.set('childFields', []);
+          var currentType = this.getTypedef(typedefs, type);
+          if (!currentType) {
+            return;
+          }
+          for (var i=0; i<currentType.fieldtypes.length; ++i) {
+            this.push('childFields', {
+              name: currentType.fieldnames[i],
+              details: {
+                type: currentType.fieldtypes[i],
+                typedefs: typedefs,
+                arraylen: currentType.fieldarraylen[i]
+              }
+            });
+          }
+        }
+      },
+
+      getTypedef: function(typedefs, type) {
+        for (var i=0; i<typedefs.length; i++) {
+          if (typedefs[i].type === type) {
+            return typedefs[i];
+          }
+        }
+      },
+
+      _hasChildren: function(childFieldsLength) {
+        return childFieldsLength > 0;
+      },
+
+      _isArrayType: function(arraylen) {
+        return arraylen > -1;
+      },
+      _arrayLenStr: function(arraylen) {
+        if (arraylen > 0) {
+          return '' + arraylen;
+        } else {
+          return '';
+        }
+      },
+    });
+  </script>
+</dom-module>
+

@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="ros_explorer" name="ros_explorer" type="ros_explorer" cwd="node" />
+</launch>
