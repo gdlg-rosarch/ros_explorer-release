@@ -1,0 +1,12 @@
+Source: ros-indigo-ros-explorer
+Section: misc
+Priority: extra
+Maintainer: Justin Huang <jstn@cs.washington.edu>
+Build-Depends: debhelper (>= 9.0.0), ros-indigo-catkin
+Homepage: http://wiki.ros.org/ros_explorer
+Standards-Version: 3.9.2
+
+Package: ros-indigo-ros-explorer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-indigo-rosbridge-server, ros-indigo-rospy
+Description: A web interface for exploring the ROS graph
