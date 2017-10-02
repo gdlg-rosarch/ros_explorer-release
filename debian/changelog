@@ -1,0 +1,8 @@
+ros-kinetic-ros-explorer (0.1.0-0jessie) jessie; urgency=high
+
+  * Initial release.
+  * Contributors: Justin Huang
+
+ -- Justin Huang <jstn@cs.washington.edu>  Tue, 29 Aug 2017 07:00:00 -0000
+
+

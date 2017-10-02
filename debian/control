@@ -1,0 +1,12 @@
+Source: ros-kinetic-ros-explorer
+Section: misc
+Priority: extra
+Maintainer: Justin Huang <jstn@cs.washington.edu>
+Build-Depends: debhelper (>= 9.0.0), ros-kinetic-catkin
+Homepage: http://wiki.ros.org/ros_explorer
+Standards-Version: 3.9.2
+
+Package: ros-kinetic-ros-explorer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-kinetic-rosbridge-server, ros-kinetic-rospy
+Description: A web interface for exploring the ROS graph
